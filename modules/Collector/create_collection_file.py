@@ -63,22 +63,21 @@ def create_zip(files_to_zip, zip_file_path, logger):
     try:
         with zipfile.ZipFile(zip_file_path, "w") as zipf:
             for file_path in files_to_zip:
-                logger.info(f"Check file to zip: {file_path} " + str(os.path.exists(file_path)))
+                logger.info(
+                    f"Check file to zip: {file_path} " + str(os.path.exists(file_path))
+                )
                 if os.path.exists(file_path):
                     logger.info(f"Start file to zip: {file_path}")
                     # Extract the filename from the path and use it as the archive name
                     archive_name = os.path.basename(file_path)
                     zipf.write(file_path, archive_name)
                     logger.info(f"Added file to zip: {archive_name}")
-                else :
+                else:
                     logger.info(f" file Not Exist: {file_path}")
     except Exception as e:
-        logger.error(f"Error while creating zip file: {str(e)}")  # Changed to logger.error for better error visibility
-     
-
-
-    
-
+        logger.error(
+            f"Error while creating zip file: {str(e)}"
+        )  # Changed to logger.error for better error visibility
 
 
 def run_server_artifact(logger, config_data):
@@ -96,7 +95,7 @@ def run_server_artifact(logger, config_data):
             config_data["Configuration"]["CollectorFileName"]
         )
         artifacts_dict["Server.Utils.CreateCollector"]["opt_filename_template"] = (
-            config_data["Configuration"]["OutputsFileName"]
+            config_data["Configuration"]["OutputsFileName"] + "-r___r-%FQDN%-%TIMESTAMP%"
         )
         artifacts_dict["Server.Utils.CreateCollector"]["artifacts"] = artifactsListArr
         artifacts_dict["Server.Utils.CreateCollector"]["parameters"] = artifactsParmObj
@@ -115,31 +114,35 @@ def run_server_artifact(logger, config_data):
         )
 
         OsCollector = ""
-        OsCollectorPath=""
+        OsCollectorPath = ""
         BatchFile = ""
-        collectorPath=f'~/setup_platform/workdir/velociraptor/velociraptor/clients/server/collections/{FlowId}/uploads/scope/{config_data["Configuration"]["CollectorFileName"]}'
+        collectorPath = f'~/setup_platform/workdir/velociraptor/velociraptor/clients/server/collections/{FlowId}/uploads/scope/{config_data["Configuration"]["CollectorFileName"]}'
         collectorPath = os.path.abspath(os.path.expanduser(collectorPath))
-        TestPathVelo="~/mssp/risx-mssp-python-script/Collector"
+        TestPathVelo = "~/mssp/risx-mssp-python-script/Collector"
         TestPathVelo = os.path.abspath(os.path.expanduser(TestPathVelo))
-
-      
 
         match sys.argv[2]:
 
             case "Windows":
-                OsCollector="velociraptor_client.exe"
+                OsCollector = "velociraptor_client.exe"
                 OsCollectorPath = "~/setup_platform/workdir/velociraptor/velociraptor/clients/windows/velociraptor_client.exe"
-                BatchFile = f'Collector/{config_data["Configuration"]["CollectorFileName"]}.bat'
-            case 'Mac':
-                OsCollector = 'velociraptor_client'
-                OsCollectorPath="~/setup_platform/workdir/velociraptor/velociraptor/clients/mac/velociraptor_client"
-                BatchFile = f'Collector/{config_data["Configuration"]["CollectorFileName"]}.sh'
-            case 'Linux':
-                OsCollector = 'velociraptor_client'
-                OsCollectorPath="~/setup_platform/workdir/velociraptor/velociraptor/clients/linux/velociraptor_client"
-                BatchFile = f'Collector/{config_data["Configuration"]["CollectorFileName"]}.sh'
-                
-        OsCollectorPath=os.path.abspath(os.path.expanduser(OsCollectorPath))
+                BatchFile = (
+                    f'Collector/{config_data["Configuration"]["CollectorFileName"]}.bat'
+                )
+            case "Mac":
+                OsCollector = "velociraptor_client"
+                OsCollectorPath = "~/setup_platform/workdir/velociraptor/velociraptor/clients/mac/velociraptor_client"
+                BatchFile = (
+                    f'Collector/{config_data["Configuration"]["CollectorFileName"]}.sh'
+                )
+            case "Linux":
+                OsCollector = "velociraptor_client"
+                OsCollectorPath = "~/setup_platform/workdir/velociraptor/velociraptor/clients/linux/velociraptor_client"
+                BatchFile = (
+                    f'Collector/{config_data["Configuration"]["CollectorFileName"]}.sh'
+                )
+
+        OsCollectorPath = os.path.abspath(os.path.expanduser(OsCollectorPath))
 
         # Define the content of the shell script
         shell_script_content = f"""#!/bin/sh
@@ -153,12 +156,14 @@ def run_server_artifact(logger, config_data):
             file.write(shell_script_content)
         time.sleep(1)
         command = [
-            "sudo", "-u", "root", "mv",
+            "sudo",
+            "-u",
+            "root",
+            "mv",
             collectorPath,
             TestPathVelo,
-         
         ]
-        ttttttt=f'{TestPathVelo}/{config_data["Configuration"]["CollectorFileName"]}'
+        ttttttt = f'{TestPathVelo}/{config_data["Configuration"]["CollectorFileName"]}'
 
         try:
             subprocess.run(command, check=True)
@@ -177,21 +182,26 @@ def run_server_artifact(logger, config_data):
                 subprocess.run(command, check=True)
                 logger.info("Ownership changed successfully.")
             except subprocess.CalledProcessError:
-                logger.info("Failed to change owner. The command did not run successfully.")
+                logger.info(
+                    "Failed to change owner. The command did not run successfully."
+                )
             except Exception as e:
                 logger.info(f"An error occurred: {e}")
         else:
-            logger.error(f"The file or directory {ttttttt} does not exist.")   
+            logger.error(f"The file or directory {ttttttt} does not exist.")
 
         # Make the shell script executable
         os.chmod(BatchFile, 0o755)
-        NewVeloCollector=f'Collector/{config_data["Configuration"]["CollectorFileName"]}'
-        files_to_zip=[BatchFile,OsCollectorPath,NewVeloCollector]
-        zip_file_path=f'Collector/{config_data["Configuration"]["CollectorFileName"]}.zip'
+        NewVeloCollector = (
+            f'Collector/{config_data["Configuration"]["CollectorFileName"]}'
+        )
+        files_to_zip = [BatchFile, OsCollectorPath, NewVeloCollector]
+        zip_file_path = (
+            f'Collector/{config_data["Configuration"]["CollectorFileName"]}.zip'
+        )
         # os.chmod(NewVeloCollector, 0o755)
         create_zip(files_to_zip, zip_file_path, logger)
         logger.info("cut " + zip_file_path)
-
 
     except Exception as e:
         logger.error(str(e))

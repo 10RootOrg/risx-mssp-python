@@ -33,13 +33,13 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 
 
-def upload_collector_results(file_path, logger):
+def upload_collector_results(file_path,HostName, logger):
     logger.info("Uploading collector results to Velociraptor server.")
     try:
         artifacts_dict = {"Server.Utils.ImportCollection":{
     'ClientId': 'auto',  # Use 'auto' to generate a new client ID
-    'Hostname': 'offline_host',  # Hostname for the new client
-    'Path': 'offline_collection.zip'  # Path to the offline collection ZIP file
+    'Hostname': HostName,  # Hostname for the new client
+    'Path': file_path # Path to the offline collection ZIP file
 }}
         modules.Velociraptor.VelociraptorScript.run_server_artifact("Server.Utils.ImportCollection", logger, artifacts_dict)
         logger.info("Collector results uploaded successfully.")
@@ -48,13 +48,14 @@ def upload_collector_results(file_path, logger):
         traceback.print_exc()
 
 if __name__ == "__main__":
-    logger = additionals.funcs.setup_logger("Collector.log")
+    logger = additionals.funcs.setup_logger("CollectorImport.log")
 
     # Load environment configuration
     env_dict = additionals.funcs.read_env_file(logger)
 
     # Run the server artifact
-    file_path = "example.zip"
-    upload_collector_results(file_path, logger)
+    file_path = sys.argv[1]
+    HostName= sys.argv[2]
+    upload_collector_results(file_path,HostName, logger)
 
 

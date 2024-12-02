@@ -254,6 +254,9 @@ def start_timesketch(row, general_config, logger):
             row["Error"] = "Timesketch is already running. Let it finish and run again later"
             return row
 
+        #Remove after
+        raise Exception("Intentional exception for testing")
+        
         config_path = os.path.join("modules", "Velociraptor", "dependencies", "api.config.yaml")
         velociraptor_config = ""
         with open(config_path, 'r') as f:
