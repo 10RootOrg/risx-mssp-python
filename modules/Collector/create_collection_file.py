@@ -95,7 +95,8 @@ def run_server_artifact(logger, config_data):
             config_data["Configuration"]["CollectorFileName"]
         )
         artifacts_dict["Server.Utils.CreateCollector"]["opt_filename_template"] = (
-            config_data["Configuration"]["OutputsFileName"] + "-r___r-%FQDN%-%TIMESTAMP%"
+            config_data["Configuration"]["OutputsFileName"]
+            + "-r___r-%FQDN%-%TIMESTAMP%"
         )
         artifacts_dict["Server.Utils.CreateCollector"]["artifacts"] = artifactsListArr
         artifacts_dict["Server.Utils.CreateCollector"]["parameters"] = artifactsParmObj

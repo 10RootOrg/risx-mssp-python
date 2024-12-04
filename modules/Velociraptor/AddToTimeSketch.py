@@ -61,10 +61,9 @@ def is_plaso_running(logger):
         logger.error(f"Failed to run docker ps command: {e.stderr}")
         return False
 
-def run_kape_artifact(stub, client_id, kape_collection, timeout, logger):
+def run_kape_artifact(stub, client_id, kape_collection, timeout, cpu_limit,  logger):
     flow_id = ""
     artifact_name =  'Windows.KapeFiles.Targets'
-    cpu_limit = "0.9"
     max_bytes = "9000000000000000"
     #query = f"LET collection <= collect_client(client_id='{client_id}', artifacts='Windows.KapeFiles.Targets', timeout=60000, env=dict(Device='C:', VSSAnalysis='Y', {kape_collection}='Y'))SELECT * FROM collection"
     query = f"LET collection <= collect_client(client_id='{client_id}', artifacts='Windows.KapeFiles.Targets', timeout={timeout}, cpu_limit={cpu_limit}, max_bytes={max_bytes}, env=dict(Device='C:', VSSAnalysis='Y', {kape_collection}='Y')) SELECT * FROM collection"
@@ -145,14 +144,14 @@ def get_flow_state(stub, client_id, flow_id, timeout, logger):
 
     return 'UNKNOWN'
 
-def run_artifact_on_client(channel, client_id, kape_collection, timeout, logger):
+def run_artifact_on_client(channel, client_id, kape_collection, timeout, cpu_limit, logger):
     logger.info("Running artifact on client!")
     flow_id = ""
     # Here, you would add the logic to perform some action on the client
     # For example, querying data, sending commands, etc.
 
     stub = api_pb2_grpc.APIStub(channel)
-    flow_id = run_kape_artifact(stub, client_id, kape_collection, timeout, logger)
+    flow_id = run_kape_artifact(stub, client_id, kape_collection, timeout, cpu_limit, logger)
     if(flow_id == ""):
         logger.error("Failed to run kape artifact!")
         return
@@ -192,11 +191,11 @@ def get_command2(config, api, row, host_name, user_name, client_name, logger):
     if sketch_id is not None:
         logger.info(f"Sketch with the same name found. Sketchid: {sketch_id}")
         row["UniqueID"] = {"SketchID": sketch_id, "TimelineID": timeline_name}
-        return row, f"timesketch_importer -u {username} -p {password} --host http://localhost:5000 --timeline_name {timeline_name} --sketch_id {sketch_id} /home/{user_name}/artifacts.plaso --quick"
+        return row, f"timesketch_importer -u {username} -p {password} --host http://localhost:5000 --timeline_name {timeline_name} --sketch_id {sketch_id} /home/{user_name}/{client_name}Artifacts.plaso --quick"
     else:
         logger.info(f"Sketch with the same name not found. Creating new Sketch: {sketch_name}")
         row["UniqueID"] = {"SketchID": sketch_name, "TimelineID": timeline_name}
-        return row, f"timesketch_importer -u {username} -p {password} --host http://localhost:5000 --timeline_name {timeline_name} --sketch_name {sketch_name} /home/{user_name}/artifacts.plaso --quick"
+        return row, f"timesketch_importer -u {username} -p {password} --host http://localhost:5000 --timeline_name {timeline_name} --sketch_name {sketch_name} /home/{user_name}/{client_name}Artifacts.plaso --quick"
 
 
 def get_sketch_id(api, sketch_name, logger):
@@ -215,7 +214,7 @@ def get_timeline_id(api, sketch_id, timeline_name, logger):
         logger.info(f"Fetching sketch with ID: {sketch_id}")
         sketch = api.get_sketch(sketch_id)
         # Test make it public
-        sketch.grant_permission(permission='read', user='public')
+        #sketch.grant_permission(permission='read', user='public')
         logger.info(f"Sketch Name [Check if its not empty]: {sketch.name}")
         logger.info(f"Sketch Labels: {sketch.labels}")
         if not sketch:
@@ -253,10 +252,7 @@ def start_timesketch(row, general_config, logger):
             row["Status"] = "Failed"
             row["Error"] = "Timesketch is already running. Let it finish and run again later"
             return row
-
-        #Remove after
-        raise Exception("Intentional exception for testing")
-        
+   
         config_path = os.path.join("modules", "Velociraptor", "dependencies", "api.config.yaml")
         velociraptor_config = ""
         with open(config_path, 'r') as f:
@@ -281,11 +277,11 @@ def start_timesketch(row, general_config, logger):
                         logger.info("Client name:" + client_name)
                         client_id = host_client_id_dict[client_name]
                         logger.info(f"Timeout is {row['ArtifactTimeOutInMinutes']} seconds!")
+                        logger.info(f"Kape CPU limit: 50")
+                        cpu_limit = 50
                         # Return after loading file
-                        flow_id = run_artifact_on_client(channel=channel, client_id=client_id, kape_collection=row["Arguments"]["KapeCollection"], timeout = int(row["ArtifactTimeOutInMinutes"]), logger=logger)
+                        flow_id = run_artifact_on_client(channel=channel, client_id=client_id, kape_collection=row["Arguments"]["KapeCollection"], timeout = int(row["ArtifactTimeOutInMinutes"]), cpu_limit = cpu_limit, logger=logger)
                         logger.info(f"flowid: {flow_id}")
-                        user_name = os.getlogin()
-                        host_name = os.uname().nodename
                         # Get the username
                         user_name = subprocess.run(['whoami'], stdout=subprocess.PIPE, text=True).stdout.strip()
 
@@ -320,7 +316,7 @@ def start_timesketch(row, general_config, logger):
                         logger.info("Running timesketech importer!")
                         additionals.funcs.run_subprocess(command2, "", logger)
 
-                        additionals.funcs.run_subprocess(f"docker run --rm -v /home/{user_name}/:/data alpine sh -c 'rm -f /data/{client_name}Artifacts.plaso'", "", logger)
+                        #additionals.funcs.run_subprocess(f"docker run --rm -v /home/{user_name}/:/data alpine sh -c 'rm -f /data/{client_name}Artifacts.plaso'", "", logger)
                         time.sleep(120)
                         #time.sleep(30)
                         logger.info("SketchID:" + str(row["UniqueID"]["SketchID"]))

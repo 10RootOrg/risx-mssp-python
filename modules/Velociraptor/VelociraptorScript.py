@@ -321,7 +321,6 @@ def run_artifact(row, logger):
         cpu_limit = resource_limit.get(
             "CPULimitPercent", 10
         )  # Default to 10% if not provided
-        cpu_limit = int(cpu_limit) / 100
         max_execution_time = resource_limit.get(
             "MaxExecutionTimeInSeconds", 3600
         )  # Default to 3600s if not provided
@@ -364,11 +363,6 @@ def run_artifact(row, logger):
             arguments = format_arguments(row["Arguments"]["ArtifactParameters"])
             spec = f"dict(`{artifact_name}`=dict({arguments}))"
 
-            #query = f"LET collection = hunt(description='API Hunt:{artifact_name}',artifacts='{artifact_name}', spec={spec}, expires=now() + {expire_time}) SELECT HuntId FROM collection"
-            #timeout=60,                    # Set a 60-second timeout as a failsafe
-            #max_rows=100,                  # Limit to 100 rows if applicable
-            #max_bytes=100000000,           # Limit to 100 MB (adjust as needed)
-            #cpu_limit=0.5                  # Optional: Set CPU usage to 50%
             query = f"LET collection = hunt(description='API Hunt:{artifact_name}', artifacts='{artifact_name}', spec={spec}, expires=now() + {expire_time}, timeout={max_execution_time}, max_rows={max_rows}, max_bytes={max_bytes_uploaded}, cpu_limit={cpu_limit}) SELECT HuntId FROM collection"
 
             channel = setup_connection(logger)

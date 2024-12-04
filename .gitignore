@@ -166,3 +166,5 @@ modules/dependencies/
 logs/*
 response_folder/*
 Collector/*
+*.zip
+test.json

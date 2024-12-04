@@ -152,7 +152,8 @@ def start_nuclei(row, logger):
         if nuclei_additional_arguments != "" and nuclei_additional_arguments != []:
             for additional_argument in nuclei_additional_arguments:
                 command.append(additional_argument)
-        command.append("-vv")  # Verbose mode
+        command.append("-vv") # Verbose mode
+        command.append("-up") # Update nuclei engine
         
         logger.info(f"Executing Nuclei command: {' '.join(command)}")
         
