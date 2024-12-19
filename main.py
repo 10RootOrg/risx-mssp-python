@@ -26,9 +26,9 @@ def main():
     env_dict = {}
     # Setup logging with the specified level
     logging_level = logging.INFO
+    logger = additionals.logger.setup_logger('main.log')
     os.makedirs("logs", exist_ok=True)
     os.makedirs("response_folder", exist_ok=True)
-    logger = additionals.logger.setup_logger('main.log')
     logger.info("Start mssp!")
     logger.info("Read env file")
     env_dict = additionals.funcs.read_env_file(logger)
