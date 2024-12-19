@@ -186,16 +186,17 @@ def get_command2(config, api, row, host_name, user_name, client_name, logger):
     row["LastIntervalDate"] = datetime.now().strftime("%d-%m-%Y-%H-%M-%S")
     row["ExpireDate"] = formatted_future_datetime
     logger.info("Checking if sketch exists or not [Need timesketch importer connection!]")
-    
+    timesketch_importer_path = f"/home/{user_name}/.local/bin/timesketch_importer"
+
     # Add a check for sketch_id and construct command
     if sketch_id is not None:
         logger.info(f"Sketch with the same name found. Sketchid: {sketch_id}")
         row["UniqueID"] = {"SketchID": sketch_id, "TimelineID": timeline_name}
-        return row, f"timesketch_importer -u {username} -p {password} --host http://localhost:5000 --timeline_name {timeline_name} --sketch_id {sketch_id} /home/{user_name}/{client_name}Artifacts.plaso --quick"
+        return row, f"{timesketch_importer_path} -u {username} -p {password} --host http://localhost:5000 --timeline_name {timeline_name} --sketch_id {sketch_id} /home/{user_name}/{client_name}Artifacts.plaso --quick"
     else:
         logger.info(f"Sketch with the same name not found. Creating new Sketch: {sketch_name}")
         row["UniqueID"] = {"SketchID": sketch_name, "TimelineID": timeline_name}
-        return row, f"timesketch_importer -u {username} -p {password} --host http://localhost:5000 --timeline_name {timeline_name} --sketch_name {sketch_name} /home/{user_name}/{client_name}Artifacts.plaso --quick"
+        return row, f"{timesketch_importer_path} -u {username} -p {password} --host http://localhost:5000 --timeline_name {timeline_name} --sketch_name {sketch_name} /home/{user_name}/{client_name}Artifacts.plaso --quick"
 
 
 def get_sketch_id(api, sketch_name, logger):
